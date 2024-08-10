@@ -41,7 +41,7 @@ def findInfomation(question = None):
     keyword = generate45info(question)
     print("keyword", keyword)
     keyword = "%20".join(keyword.split(" "))
-    link = f"https://newsapi.org/v2/everything?q={keyword}&from=2024-07-10&sortBy=publishedAt&apiKey=yourKey"
+    link = f"https://newsapi.org/v2/everything?q={keyword}&from=2024-07-10&sortBy=publishedAt&apiKey=yourkey"
     link = re.sub(r'\"+', '', link)
     
     respone = requests.get(link)
@@ -52,7 +52,7 @@ def findInfomation(question = None):
     print(len(articles))
     if len(articles) == 0:
         return "None"
-    info = [str(item["title"]) + " " + str(item["description"]) + " " + str(item["content"]) for item in articles]
+    info = ["Title: " + str(item["title"]) + ". Description: " + str(item["description"]) + ". Content: " + str(item["content"]) + ". PublishedAt: " + str(item["publishedAt"]) + "\n" for item in articles]
     #print(info[:5])
     embeddings = np.vstack([embedding(text, model, tokenizer) for text in info])
     embeddings = embeddings.astype('float32')
@@ -73,7 +73,7 @@ def findInfomation(question = None):
         print(info[idx])
     return res
 
-apikey = "yourKey"
+apikey = "yourkey"
 
 def generate45info(question):
     client = Groq(api_key=apikey)
@@ -88,7 +88,7 @@ def generate45info(question):
             Để tìm kiếm các thông tin liên quan cho câu hỏi?\n\
             Điều kiện bắt buộc của ouput: \n \
             - phải ngắn gọn súc tích phù hợp để sreach các trang báo, Ngôn ngữ sử dụng phải là tiếng anh \n\
-            - chỉ được là một hoặc vài từ \n
+            - chỉ được là một câu \n
             - không được có những chú thích thêm\n
             - chỉ có một dòng \n \
             - không được là câu hỏi\n \
