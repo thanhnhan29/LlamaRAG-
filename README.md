@@ -15,8 +15,8 @@
 ### Results achieved:
 
 - Llama 3 is now able to answer questions about recent issues, such as the results of the 2024 Olympics.
-  ![](images\Example.png)
-  ![](images\Example2.png)
+  ![](https://github.com/thanhnhan29/LlamaRAG-/blob/main/images/Example.png)
+  ![](https://github.com/thanhnhan29/LlamaRAG-/blob/main/images/Example2.png)
 
 ### Next improvement focus:
 
