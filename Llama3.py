@@ -1,17 +1,22 @@
 from groq import Groq
 import os
 import requests
-from pprint import pprint
 from transformers import BertTokenizer, BertModel
 import torch
 import faiss
 import numpy as np
 import re
+from datetime import datetime, timedelta
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE'
 
 tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 model = BertModel.from_pretrained('bert-base-uncased')
+def get_date_30_days_ago():
+    today = datetime.now()
+    date_30_days_ago = today - timedelta(days=30)
+    return date_30_days_ago
 
+time = get_date_30_days_ago()
 # completion = client.chat.completions.create(
 #     model="llama3-70b-8192",
 #     messages=[
@@ -41,7 +46,7 @@ def findInfomation(question = None):
     keyword = generate45info(question)
     print("keyword", keyword)
     keyword = "%20".join(keyword.split(" "))
-    link = f"https://newsapi.org/v2/everything?q={keyword}&from=2024-07-10&sortBy=publishedAt&apiKey=yourkey"
+    link = f"https://newsapi.org/v2/everything?q={keyword}&from={time.year}-{time.month}-{time.day}&sortBy=publishedAt&apiKey=yourkey"
     link = re.sub(r'\"+', '', link)
     
     respone = requests.get(link)
