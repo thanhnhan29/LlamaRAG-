@@ -38,11 +38,11 @@ def embedding(text, model, tokenizer):
 def findInfomation(question = None):
 
     print("\033c", end="")
-    keyword = "%20".join(generate45info(question).split(" "))
+    keyword = generate45info(question)
     print("keyword", keyword)
-    link = f"https://newsapi.org/v2/everything?q={keyword}&from=2024-07-10&sortBy=publishedAt&apiKey=<yourapikey>"
+    keyword = "%20".join(keyword.split(" "))
+    link = f"https://newsapi.org/v2/everything?q={keyword}&from=2024-07-10&sortBy=publishedAt&apiKey=yourKey"
     link = re.sub(r'\"+', '', link)
-    print(link)
     
     respone = requests.get(link)
     articles = respone.json()["articles"]
@@ -52,7 +52,7 @@ def findInfomation(question = None):
     print(len(articles))
     if len(articles) == 0:
         return "None"
-    info = [item["title"] + " " + item["description"] + " " + item["content"] for item in articles[:50]]
+    info = [str(item["title"]) + " " + str(item["description"]) + " " + str(item["content"]) for item in articles]
     #print(info[:5])
     embeddings = np.vstack([embedding(text, model, tokenizer) for text in info])
     embeddings = embeddings.astype('float32')
@@ -73,7 +73,7 @@ def findInfomation(question = None):
         print(info[idx])
     return res
 
-apikey = "<yourapikey>"
+apikey = "yourKey"
 
 def generate45info(question):
     client = Groq(api_key=apikey)
@@ -83,14 +83,27 @@ def generate45info(question):
         {
             "role": "user",
             "content": f"""
-            What's the keyword of '{question}' \
-            to search for information to answer that question? \
-            Answer briefly with only one phrase to indicate the answer, answer by English.
+            Bạn là một module trong một hệ thống lớn, chỉ trả lời đáp án, không chú thích gì thêm\n \
+            Hãy rút trích các keyword của câu sau: '{question}\n\
+            Để tìm kiếm các thông tin liên quan cho câu hỏi?\n\
+            Điều kiện bắt buộc của ouput: \n \
+            - phải ngắn gọn súc tích phù hợp để sreach các trang báo, Ngôn ngữ sử dụng phải là tiếng anh \n\
+            - chỉ được là một hoặc vài từ \n
+            - không được có những chú thích thêm\n
+            - chỉ có một dòng \n \
+            - không được là câu hỏi\n \
+            
+
+            Định dạng câu trả lời: \n \
+            - \n \
+
+            Ví dụ mẫu: "Đội nào vô địch Euro 2024"\n
+            Câu trả lời: "Tây ban nha" 
             """
         },
     ],
     temperature=0.1,
-    max_tokens=64,
+    max_tokens=32,
     top_p=1,
     stream=False,
     stop=None,)
@@ -104,13 +117,24 @@ def generate(question):
     messages=[
         {
             "role": "user",
-            "content": f"""You are an assistant.\
-            Based on the information below and what you know, please answer the following question. \
-            Respond in the language of the question and keep your answer brief and concise\n
+            "content": f"""
+            Bạn là người trợ lý hỗ trợ, \
+            Hãy tham khảo những thông tin dưới đây không có thì bỏ qua: \n\
             Information:{info}\n
-            Question:{question}\n
-            Do not use phrases like 'the provided information,' Do not use phrases such as 'the provided text,' \
-            'the information provided.'or similar phrases.
+            ====================\n
+
+            Để trả lời câu hỏi sau đây:\n \
+            
+            ====================\n \
+            Question:{question}\n  \
+            ====================\n \
+            Định dạng câu trả lời: 
+            - Câu trả lời phải cùng ngôn ngữ với câu hỏi bên trên,\
+            - Không được sử dụng các cụm từ: "thông tin được cung cấp", "thông tin trên", ... Hoặc những cụm từ liên quan \n\
+            - Câu trả lời phải ngắn gọn, súc tích.\n \
+
+            Câu hỏi mẫu: "Đội nào vô địch bóng đá nam Euro 2021?"\n \
+            câu trả lời: được tuyển ."\n
             """
         },
     ],
