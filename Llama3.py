@@ -1,22 +1,35 @@
 from groq import Groq
 import os
 import requests
+from pprint import pprint
 from transformers import BertTokenizer, BertModel
 import torch
 import faiss
 import numpy as np
 import re
 from datetime import datetime, timedelta
-os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE'
-
-tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-model = BertModel.from_pretrained('bert-base-uncased')
 def get_date_30_days_ago():
     today = datetime.now()
     date_30_days_ago = today - timedelta(days=30)
     return date_30_days_ago
 
 time = get_date_30_days_ago()
+
+os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE'
+
+
+tokenizer = BertTokenizer.from_pretrained("huawei-noah/TinyBERT_General_4L_312D")
+model = BertModel.from_pretrained("huawei-noah/TinyBERT_General_4L_312D")
+
+def embedding(text:str):
+    inputs = tokenizer(text, return_tensors="pt")
+    # Rút trích đặc trưng
+    with torch.no_grad():
+        outputs = model(**inputs)
+
+    # Lấy embedding của [CLS] token (đặc trưng của toàn bộ câu)
+    cls_embedding = outputs.last_hidden_state[:, 0, :]
+    return cls_embedding.numpy()
 # completion = client.chat.completions.create(
 #     model="llama3-70b-8192",
 #     messages=[
@@ -32,17 +45,8 @@ time = get_date_30_days_ago()
 #     stop=None,
 # )
 # print(completion.choices[0].message.content
-def embedding(text, model, tokenizer):
-    inputs = tokenizer(text, return_tensors='pt', padding=True, truncation=True)
-    with torch.no_grad():
-        outputs = model(**inputs)
-    embeddings = outputs.last_hidden_state[:, 0, :]  # Sử dụng vector [CLS]
-    return embeddings.numpy()
-
 
 def findInfomation(question = None):
-
-    print("\033c", end="")
     keyword = generate45info(question)
     print("keyword", keyword)
     keyword = "%20".join(keyword.split(" "))
@@ -57,14 +61,14 @@ def findInfomation(question = None):
     print(len(articles))
     if len(articles) == 0:
         return "None"
-    info = ["Title: " + str(item["title"]) + ". Description: " + str(item["description"]) + ". Content: " + str(item["content"]) + ". PublishedAt: " + str(item["publishedAt"]) + "\n" for item in articles]
+    info = ["Title: " + str(item["title"]) + ". Description: " + str(item["description"]) + ". PublishedAt: " + str(item["publishedAt"]) + "\n" for item in articles]
     #print(info[:5])
-    embeddings = np.vstack([embedding(text, model, tokenizer) for text in info])
+    embeddings = np.vstack([embedding(text) for text in info])
     embeddings = embeddings.astype('float32')
     dimension = embeddings.shape[1]  # Số chiều của embeddings
     index = faiss.IndexFlatL2(dimension)  # Sử dụng L2 (Euclidean Distance) cho tìm kiếm
     index.add(embeddings)  # Thêm embeddings vào index
-    query_embedding = embedding(question, model, tokenizer).astype('float32')
+    query_embedding = embedding(question).astype('float32')
 
     # Tìm kiếm văn bản tương tự nhất
     D, I = index.search(query_embedding, 5)  # Tìm kiếm 2 văn bản gần nhất
@@ -79,6 +83,7 @@ def findInfomation(question = None):
     return res
 
 apikey = "yourkey"
+
 
 def generate45info(question):
     client = Groq(api_key=apikey)
